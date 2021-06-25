@@ -1,5 +1,5 @@
 /** 
-☑️ 资源解析器 ©𝐒𝐡𝐚𝐰𝐧  ⟦2021-04-14 09:20⟧
+☑️ 资源解析器 ©𝐒𝐡𝐚𝐰𝐧  ⟦2021-06-25 16:55⟧
 ----------------------------------------------------------
 🛠 发现 𝐁𝐔𝐆 请反馈: @Shawn_KOP_bot
 ⛳️ 关注 🆃🅶 相关频道: https://t.me/QuanX_API
@@ -37,6 +37,8 @@
     ∎ 样式分别为 "𝐬𝐬","𝐒𝐒","🅢🅢","🆂🆂","ⓢⓢ","🅂🅂"
   ❖ $emoji1/2 占位符，将节点地区emoji(🇭🇰 🇯🇵 等)作为可操作参数，如
     ∎ rename=@「$emoji1」
+  ❖ $tag 占位符，将订阅的 tag 作为可操作参数，如
+    ∎ rename=@「$tag」
 ⦿ suffix=-1/1 将节点类型做为前缀/后缀 添加在节点名中, 如 「𝗌𝗌」 「𝖵𝗆𝖾𝗌𝗌」
 ⦿ ptn=1-6, 分别将节点名中的英文替换成花样字 ⇒ 🅰/🄰/𝐀/𝗮/𝔸/𝕒
 ⦿ npt=1-6, 分别将节点名中的数字替换成花样数字 ⇒ ①\❶\⓵\𝟙\¹\₁
@@ -104,7 +106,7 @@ content0 = content0.indexOf("DOCTYPE html") != -1 && link0.indexOf("github.com")
 
 
 var para = /^(http|https)\:\/\//.test(link0) ? link0 : content0.split("\n")[0];
-var para1 = para.slice(para.indexOf("#") + 1).replace(/\$type/g,"node_type_para_prefix").replace(/\$emoji/g,"node_emoji_flag_prefix") //防止参数中其它位置也存在"#"
+var para1 = para.slice(para.indexOf("#") + 1).replace(/\$type/g,"node_type_para_prefix").replace(/\$emoji/g,"node_emoji_flag_prefix").replace(/\$tag/g,"node_tag_prefix") //防止参数中其它位置也存在"#"
 var mark0 = para.indexOf("#") != -1 ? true : false; //是否有參數需要解析
 var Pinfo = mark0 && para1.indexOf("info=") != -1 ? para1.split("info=")[1].split("&")[0] : 0;
 var ntf_flow = 0;
@@ -296,13 +298,13 @@ function ResourceParse() {
     if (total.length > 0){
       if (Psuffix==1 || Psuffix==-1) {total = Psuffix == 1? total.map(type_suffix):total.map(type_prefix)
       }
-      total = total.map(type_handle).map(emoji_prefix_handle)
+      total = total.map(type_handle).map(emoji_prefix_handle).map(tag_handle)
       total = TagCheck_QX(total).join("\n") //节点名检查
       if (Pcnt == 1) {$notify("解析后最终返回内容" , "节点数量: " +total.split("\n").length, total)}
       total = Base64.encode(total) //强制节点类型 base64 加密后再导入 Quantumult X
       $done({ content: total });
     } else {
-      $notify("❓❓ 友情提示", "⚠️⚠️ 解析后无有效内容", "🚥🚥 请自行检查相关参数, 或者点击通知跳转反馈", bug_link)
+      $notify("❓❓ 友情提示 ➟ "+ "⟦" + subtag + "⟧", "⚠️⚠️ 解析后无有效内容", "🚥🚥 请自行检查相关参数, 或者点击通知跳转反馈", bug_link)
       total = errornode
       $done({ content: errornode })
     }
@@ -431,6 +433,7 @@ function Type_Check(subs) {
 
 // 检查节点名字(重复以及空名)等QuanX 不允许的情形，以及多个空格等“不规范”方式
 function TagCheck_QX(content) {
+  typefix = {"shadowsocks":["𝐬𝐬","𝐒𝐒","🅢🅢","🆂🆂","ⓢⓢ","🅂🅂","SS"],"shadowsocksr":["𝐬𝐬𝐫","𝐒𝐒𝐑","🅢🅢🅡","🆂🆂🆁","ⓢⓢⓡ","🅂🅂🅁","SSR"],"vmess":["𝐯𝐦𝐞𝐬𝐬","𝐕𝐌𝐄𝐒𝐒","🅥🅜🅔🅢🅢","🆅🅼🅴🆂🆂","ⓥⓜⓔⓢⓢ","🅅🄼🄴🅂🅂","VMESS"],"trojan":["𝐭𝐫𝐨𝐣𝐚𝐧","𝐓𝐑𝐎𝐉𝐀𝐍","🅣🅡🅞🅙🅐🅝","🆃🆁🅾🅹🅰🅽","ⓣⓡⓞⓙⓐⓝ","🅃🅁🄾🄹🄰🄽","TROJAN"],"http":["𝐡𝐭𝐭𝐩","𝐇𝐓𝐓𝐏","🅗🅣🅣🅟","🅷🆃🆃🅿","ⓗⓣⓣⓟ","🄷🅃🅃🄿","HTTP"]}
   console.log(content)
     var Olist = content.map(item =>item.trim().replace(/\s{2,}/g," "))
     //$notify("","",Olist)
@@ -439,17 +442,19 @@ function TagCheck_QX(content) {
     var no = 0;
     for (var i = 0; i < Olist.length; i++) {
         var item = Olist[i] ? Olist[i] : ""
+      typefix["shadowsocks"]=item.indexOf("ssr-protocol")!=-1? typefix["shadowsocksr"] : typefix["shadowsocks"]
         if (item.replace(/ /gm, "").indexOf("tag=") != -1) {
             var nl = item.slice(item.indexOf("tag"))
             var nm = nl.slice(nl.indexOf("=") + 1)
             if (nm == "") { //空名字
-                nm = " [" + item.split("=")[0] + "] " + item.split("=")[1].split(",")[0].split(":")[0]
+                tp = typefix[item.split("=")[0].trim()][3]
+                nm = tp + " | " + item.split("=")[1].split(",")[0].split(":")[0]
                 item = item.split("tag")[0] + "tag=" + nm.replace("shadowsocks", "ss")
                 nulllist.push(nm.replace("shadowsocks", "ss"))
             }
             var ni = 0
             while (nmlist.indexOf(nm) != -1) { //重名情形
-                nm = nm+ NoReplace(ni+1)
+                nm = ni==0? nm+ NoReplace(ni+1):nm.split(" ").slice(0,nm.split(" ").length-2).join(" ") + NoReplace(ni+1)
                 item = Pdel != 1 ? item.split("tag")[0] + "tag=" + nm : ""
                 ni = ni + 1
             }
@@ -596,6 +601,15 @@ function getnode_emoji(item,ind){
   if(item.indexOf("tag=")!=-1) {
     return get_emoji(ind,item.split("tag=")[1])[1]
   }
+}
+
+// 操作订阅的 tag
+
+function tag_handle(item) {
+  if(item.indexOf("node_tag_prefix")!=-1) {
+    item = item.replace(/node_tag_prefix/g,subtag)
+  }
+  return item
 }
 
 // 用于单条 URI 的 tag 参数, 直接指定节点名
@@ -1144,30 +1158,34 @@ function VQ2QX(subs, Pudp, Ptfo, Pcert, Ptls13) {
 
 //Shadowrocket 格式的 vmess URI 转换
 function VR2QX(subs, Pudp, Ptfo, Pcert, Ptls13) {
-    var server = String(Base64.decode(subs.replace("vmess://", "").split("?remarks")[0]).trim()).split("\u0000")[0]
-    var node = ""
-    var ip = "vmess=" + server.split("@")[1] + ", " + "method=aes-128-gcm, " + "password=" + server.split("@")[0].split(":")[1] + ", "
-    var tag = "tag=" + decodeURIComponent(subs.split("remarks=")[1].split("&")[0])
-    var tfo = subs.indexOf("tfo=1") != -1 ? "fast-open=true, " : "fast-open=false, "
-    var udp = Pudp == 1 ? "udp-relay=true, " : "udp-relay=false, ";
-    node = ip + tfo + udp
-    var obfs = subs.split("obfs=")[1].split("&")[0]
-    if (obfs == "none") { //
-        obfs = subs.indexOf("tls=1") != -1 ? "obfs=over-tls, " : "" //over-tls
-    } else if (obfs == "websocket") {
-        obfs = subs.indexOf("tls=1") != -1 ? "obfs=wss, " : "obfs=ws," //ws,wss 类型
-        var ouri = subs.indexOf("&path=") != -1 ? subs.split("&path=")[1].split("&")[0] : "/" //ws,wss 类型
-        obfs = obfs + "obfs-uri=" + ouri + ", "
-        var host = subs.indexOf("&obfsParam=") != -1 ? "obfs-host=" + subs.split("&obfsParam=")[1].split("&")[0] + ", " : ""
-        obfs = obfs + host
+  var server = String(Base64.decode(subs.replace("vmess://", "").split("?remarks")[0]).trim()).split("\u0000")[0]
+  var node = ""
+  var ip = "vmess=" + server.split("@")[1] + ", " + "method=aes-128-gcm, " + "password=" + server.split("@")[0].split(":")[1] + ", "
+  var tag = "tag=" + decodeURIComponent(subs.split("remarks=")[1].split("&")[0])
+  var tfo = subs.indexOf("tfo=1") != -1 ? "fast-open=true, " : "fast-open=false, "
+  var udp = Pudp == 1 ? "udp-relay=true, " : "udp-relay=false, ";
+  node = ip + tfo + udp
+  var obfs = subs.split("obfs=")[1].split("&")[0]
+  if (obfs == "none") { //
+    obfs = subs.indexOf("tls=1") != -1 ? "obfs=over-tls, " : "" //over-tls
+  } else if (obfs == "websocket") {
+    obfs = subs.indexOf("tls=1") != -1 ? "obfs=wss, " : "obfs=ws, " //ws,wss 类型
+    var ouri = subs.indexOf("&path=") != -1 ? subs.split("&path=")[1].split("&")[0] : "/" //ws,wss 类型
+    obfs = obfs + "obfs-uri=" + ouri + ", "
+    var host = subs.indexOf("&obfsParam=") != -1 ? decodeURIComponent(subs.split("&obfsParam=")[1].split("&")[0]) : ""
+    if (host.indexOf("\"Host\"")!=-1 && host.indexOf("{")!=-1) {
+      host = JSON.parse(host)["Host"]
     }
-    if (obfs.indexOf("obfs=over-tls") != -1 || obfs.indexOf("obfs=wss") != -1) {
-        var cert = Pcert != 0 || subs.indexOf("allowInsecure=1") != -1 ? "tls-verification=false, " : "tls-verification=true, "
-        var tls13 = Ptls13 == 1 ? "tls13=true, " : ""
-        obfs = obfs + cert + tls13
-    }
-    node = node + obfs + tag
-    return node
+    host = "obfs-host=" + host + ", "
+    obfs = obfs + host
+  }
+  if (obfs.indexOf("obfs=over-tls") != -1 || obfs.indexOf("obfs=wss") != -1) {
+    var cert = Pcert != 0 || subs.indexOf("allowInsecure=1") != -1 ? "tls-verification=false, " : "tls-verification=true, "
+    var tls13 = Ptls13 == 1 ? "tls13=true, " : ""
+    obfs = obfs + cert + tls13
+  }
+  node = node + obfs + tag
+  return node
 }
 
 //V2RayN uri转换成 QUANX 格式
@@ -1380,7 +1398,8 @@ function SS2QX(subs, Pudp, Ptfo) {
     var cnt = subs.split("ss://")[1]
     if (cnt.split(":").length <= 6) { //排除难搞的 ipv6 节点
         type = "shadowsocks=";
-        if (cnt.indexOf("@") != -1) {
+      let cntt = cnt.split("#")[0]
+      if (cntt.indexOf("@") != -1 && cntt.indexOf(":") != -1) {
             ip = cnt.split("@")[1].split("#")[0].split("/")[0];
             pwdmtd = Base64.decode(cnt.split("@")[0].replace(/-/g, "+").replace(/_/g, "/")).split("\u0000")[0].split(":")
         } else {
@@ -1653,7 +1672,7 @@ function emoji_del(str) {
 
 //为节点名添加 emoji
 function get_emoji(emojip, sname) {
-    var Lmoji = { "🏳️‍🌈": ["流量", "时间", "应急", "过期", "Bandwidth", "expire"], "🇦🇹": ["奥地利", "Austria", "维也纳"], "🇦🇺": ["AU", "Australia", "Sydney", "澳大利亚", "澳洲", "墨尔本", "悉尼" ,"土澳", "京澳","廣澳","滬澳"], "🇧🇪": ["BE", "比利时"], "🇧🇬": ["保加利亚", "Bulgaria"], "🇵🇰":["巴基斯坦"], "🇰🇭":["柬埔寨"], "🇺🇦":["烏克蘭","乌克兰"], "🇨🇦": ["Canada","CANADA", "CAN", "Waterloo", "加拿大", "蒙特利尔", "温哥华", "楓葉", "枫叶", "滑铁卢", "多伦多"], "🇨🇭": ["瑞士", "苏黎世", "Switzerland"], "🇨🇿": ["Czechia", "捷克"], "🇩🇪": ["DE", "German", "GERMAN", "德国", "德國", "法兰克福","京德","滬德","廣德"], "🇩🇰": ["DK","DNK","丹麦","丹麥"], "🇪🇸": ["ES", "西班牙", "Spain"], "🇪🇺": ["EU", "欧盟", "欧罗巴"], "🇫🇮": ["Finland", "芬兰", "赫尔辛基"], "🇫🇷": ["FR", "France", "法国", "法國", "巴黎"], "🇬🇧": ["UK", "GB", "England", "United Kingdom", "英国", "伦敦", "英"], "🇲🇴": ["MO", "Macao", "澳门", "澳門", "CTM"], "🇰🇿": ["哈萨克斯坦"], "🇭🇺": ["匈牙利", "Hungary"], "🇭🇰": ["HK", "Hongkong", "Hong Kong", "HongKong", "HONG KONG","香港", "深港", "沪港", "呼港", "HKT", "HKBN", "HGC", "WTT", "CMI", "穗港", "京港", "港"], "🇮🇩": ["Indonesia", "印尼", "印度尼西亚", "雅加达"], "🇮🇪": ["Ireland", "IRELAND", "爱尔兰", "愛爾蘭", "都柏林"], "🇮🇱": ["Israel", "以色列"], "🇮🇳": ["India", "IND", "INDIA","印度", "孟买", "Mumbai"], "🇮🇸":["IS","ISL", "冰岛","冰島"],"🇰🇵": ["KP", "朝鲜"], "🇰🇷": ["KR", "Korea", "KOR", "韩国", "首尔", "韩", "韓"], "🇱🇻": ["Latvia", "Latvija", "拉脱维亚"], "🇲🇽️": ["MEX", "MX", "墨西哥"],"🇮🇲":["馬恩島", "曼島" ,"曼岛"], "🇲🇾": ["MY", "Malaysia","MALAYSIA", "马来西亚", "大馬", "馬來西亞", "吉隆坡"], "🇳🇱": ["NL", "Netherlands", "荷兰", "荷蘭", "尼德蘭", "阿姆斯特丹"], "🇵🇭": ["PH", "Philippines", "菲律宾", "菲律賓"], "🇷🇴": ["RO", "罗马尼亚"], "🇷🇺": ["RU", "Russia", "俄罗斯", "俄国", "俄羅斯", "伯力", "莫斯科", "圣彼得堡", "西伯利亚", "新西伯利亚", "京俄", "杭俄","廣俄","滬俄"], "🇸🇦": ["沙特", "迪拜"], "🇸🇪": ["SE", "Sweden", "瑞典"], "🇸🇬": ["SG", "Singapore","SINGAPORE", "新加坡", "狮城", "沪新", "京新", "泉新", "穗新", "深新", "杭新", "广新","廣新","滬新"], "🇹🇭": ["TH", "Thailand", "泰国", "泰國", "曼谷"], "🇹🇷": ["TR", "Turkey", "土耳其", "伊斯坦布尔"], "🇹🇼": ["TW", "Taiwan","TAIWAN", "台湾", "台北", "台中", "新北", "彰化", "CHT", "台", "HINET"], "🇺🇸": ["US", "USA", "America", "United States", "美国", "美", "京美", "波特兰", "达拉斯", "俄勒冈", "凤凰城", "费利蒙", "硅谷", "矽谷", "拉斯维加斯", "洛杉矶", "圣何塞", "圣克拉拉", "西雅图", "芝加哥", "沪美", "哥伦布", "纽约"], "🇻🇳": ["VN", "越南", "胡志明市"], "🇮🇹": ["Italy", "IT", "Nachash", "意大利", "米兰", "義大利"], "🇿🇦": ["South Africa", "南非"], "🇦🇪": ["United Arab Emirates", "阿联酋"], "🇧🇷": ["BR", "Brazil", "巴西", "圣保罗"], "🇯🇵": ["JP", "Japan","JAPAN", "日", "日本", "东京", "大阪", "埼玉", "沪日", "穗日", "川日", "中日", "泉日", "杭日", "深日", "辽日", "广日"], "🇦🇷": ["AR", "阿根廷"], "🇳🇴": ["Norway", "挪威", "NO"], "🇨🇳": ["CN", "China", "回国", "中国", "江苏", "北京", "上海", "广州", "深圳", "杭州", "徐州", "青岛", "宁波", "镇江", "back"],"🇵🇱": ["PL", "POL", "波兰","波蘭"], "🇨🇱": ["智利"],"🇳🇿":["新西蘭","新西兰"] }
+    var Lmoji = { "🏳️‍🌈": ["流量", "时间", "应急", "过期", "Bandwidth", "expire"],"🇦🇿":["阿塞拜疆"], "🇦🇹": ["奥地利", "奧地利", "Austria", "维也纳"], "🇦🇺": ["AU", "Australia", "Sydney", "澳大利亚", "澳洲", "墨尔本", "悉尼" ,"土澳", "京澳","廣澳","滬澳","沪澳","广澳"], "🇧🇪": ["BE", "比利时"], "🇧🇬": ["保加利亚", "Bulgaria"], "🇵🇰":["巴基斯坦"], "🇰🇭":["柬埔寨"], "🇺🇦":["烏克蘭","乌克兰"], "🇨🇦": ["Canada","CANADA", "CAN", "Waterloo", "加拿大", "蒙特利尔", "温哥华", "楓葉", "枫叶", "滑铁卢", "多伦多"], "🇨🇭": ["瑞士", "苏黎世", "Switzerland"], "🇨🇿": ["Czechia", "捷克"], "🇩🇪": ["DE", "German", "GERMAN", "德国", "德國", "法兰克福","京德","滬德","廣德","沪德","广德"], "🇩🇰": ["DK","DNK","丹麦","丹麥"], "🇪🇸": ["ES", "西班牙", "Spain"], "🇪🇺": ["EU", "欧盟", "欧罗巴"], "🇫🇮": ["Finland", "芬兰", "赫尔辛基"], "🇫🇷": ["FR", "France", "法国", "法國", "巴黎"], "🇬🇧": ["UK", "GB", "England", "United Kingdom", "英国", "伦敦", "英"], "🇲🇴": ["MO", "Macao", "澳门", "澳門", "CTM"], "🇰🇿": ["哈萨克斯坦"], "🇭🇺": ["匈牙利", "Hungary"], "🇭🇰": ["HK", "Hongkong", "Hong Kong", "HongKong", "HONG KONG","香港", "深港", "沪港", "呼港", "HKT", "HKBN", "HGC", "WTT", "CMI", "穗港", "京港", "港"], "🇮🇩": ["Indonesia", "印尼", "印度尼西亚", "雅加达"], "🇮🇪": ["Ireland", "IRELAND", "爱尔兰", "愛爾蘭", "都柏林"], "🇮🇱": ["Israel", "以色列"], "🇮🇳": ["India", "IND", "INDIA","印度", "孟买", "Mumbai"], "🇮🇸":["IS","ISL", "冰岛","冰島"],"🇰🇵": ["KP", "朝鲜"], "🇰🇷": ["KR", "Korea", "KOR", "韩国", "首尔", "韩", "韓"], "🇱🇺": ["卢森堡"], "🇱🇻": ["Latvia", "Latvija", "拉脱维亚"], "🇲🇽️": ["MEX", "MX", "墨西哥"], "🇲🇾": ["MY", "Malaysia","MALAYSIA", "马来西亚", "大馬", "馬來西亞", "吉隆坡"], "🇳🇱": ["NL", "Netherlands", "荷兰", "荷蘭", "尼德蘭", "阿姆斯特丹"], "🇵🇭": ["PH", "Philippines", "菲律宾", "菲律賓"], "🇷🇴": ["RO", "罗马尼亚"], "🇷🇺": ["RU", "Russia", "俄罗斯", "俄国", "俄羅斯", "伯力", "莫斯科", "圣彼得堡", "西伯利亚", "新西伯利亚", "京俄", "杭俄","廣俄","滬俄","广俄","沪俄"], "🇸🇦": ["沙特", "迪拜"], "🇸🇪": ["SE", "Sweden"], "🇸🇬": ["SG", "Singapore","SINGAPORE", "新加坡", "狮城", "沪新", "京新", "泉新", "穗新", "深新", "杭新", "广新","廣新","滬新"], "🇹🇭": ["TH", "Thailand", "泰国", "泰國", "曼谷"], "🇹🇷": ["TR", "Turkey", "土耳其", "伊斯坦布尔"], "🇹🇼": ["TW", "Taiwan","TAIWAN", "台湾", "台北", "台中", "新北", "彰化", "CHT", "台", "HINET"], "🇺🇸": ["US", "USA", "America", "United States", "美国", "美", "京美", "波特兰", "达拉斯", "俄勒冈", "凤凰城", "费利蒙", "硅谷", "矽谷", "拉斯维加斯", "洛杉矶", "圣何塞", "圣克拉拉", "西雅图", "芝加哥", "沪美", "哥伦布", "纽约"], "🇻🇳": ["VN", "越南", "胡志明市"], "🇮🇹": ["Italy", "IT", "Nachash", "意大利", "米兰", "義大利"], "🇿🇦": ["South Africa", "南非"], "🇦🇪": ["United Arab Emirates", "阿联酋"], "🇧🇷": ["BR", "Brazil", "巴西", "圣保罗"], "🇯🇵": ["JP", "Japan","JAPAN", "日", "日本", "东京", "大阪", "埼玉", "沪日", "穗日", "川日", "中日", "泉日", "杭日", "深日", "辽日", "广日"], "🇦🇷": ["AR", "阿根廷"], "🇳🇴": ["Norway", "挪威", "NO"], "🇨🇳": ["CN", "China", "回国", "中国","中國", "江苏", "北京", "上海", "广州", "深圳", "杭州", "徐州", "青岛", "宁波", "镇江", "back"],"🇵🇱": ["PL", "POL", "波兰","波蘭"], "🇨🇱": ["智利"],"🇳🇿":["新西蘭","新西兰"],"🇬🇷": ["希腊","希臘"],"🇪🇬": ["埃及"],"🇮🇲": ["马恩岛","馬恩島"],"🇵🇹": ["葡萄牙"]}
     str1 = JSON.stringify(Lmoji)
     aa = JSON.parse(str1)
     bb = JSON.parse(str1.replace(/🇹🇼/g, " 🇨🇳"))
@@ -1897,7 +1916,8 @@ function YAMLFix(cnt){
   
   if (cnt.indexOf("{") != -1){
     cnt = cnt.replace(/\[/g,"yaml@bug1")
-    cnt = cnt.replace(/(^|\n)- /g, "$1  - ").replace(/    - /g,"  - ").replace(/:(?!\s)/g,": ").replace(/\,\"/g,", \"").replace(/: {/g, ": {,     ").replace(/, (host|path|tls|mux|skip)/g,",     $1")
+    cnt = cnt.replace(/(^|\n)- /g, "$1  - ").replace(/    - /g,"  - ").replace(/:(?!\s)/g,": ").replace(/\,\"/g,", \"").replace(/: {/g, ": {,     ")
+    //.replace(/, (host|path|tls|mux|skip)/g,",     $1")
     //console.log(cnt)
     cnt = cnt.replace(/{\s*name: /g,"{name: \"").replace(/, server:/g,"\", server:")
     cnt = cnt.replace(/{|}/g,"").replace(/,/g,"\n   ")
@@ -2042,7 +2062,7 @@ function CH2QX(cnt){
     cert = cnt["skip-cert-verify"] && cnt.tls ? "tls-verification=false" : ""
     if (Pcert0 == 1 && cnt.tls) {
       cert = "tls-verification=true"
-    } else if (Pcert0 == 1 && cnt.tls) {
+    } else if (Pcert0 != 1 && cnt.tls) {
       cert = "tls-verification=false"
     }
     node = "http="+[ipt, uname, pwd, tls, cert, tag].filter(Boolean).join(", ")
