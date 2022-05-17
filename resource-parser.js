@@ -1,5 +1,5 @@
 /** 
-☑️ 资源解析器 ©𝐒𝐡𝐚𝐰𝐧  ⟦2022-05-05 11:27⟧
+☑️ 资源解析器 ©𝐒𝐡𝐚𝐰𝐧  ⟦2022-05-17 17:27⟧
 ----------------------------------------------------------
 ⛳️ 关注 🆃🅶 频道: https://t.me/qixinscience
 
@@ -215,6 +215,14 @@ patn[6] = [ '₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'
 patn[7] = ["𝟎","𝟏","𝟐","𝟑","𝟒","𝟓","𝟔","𝟖","𝟗"]
 patn[8] = ["𝟶","𝟷","𝟸","𝟹","𝟺","𝟻","𝟼","𝟽","𝟾","𝟿"]
 
+//避免json undefined错误的 函数
+const getValue = (fn, defaultVaule) => {
+  try {
+    return fn();
+  } catch (error) {
+    return defaultVaule;
+  }
+};
 
 var type0=""
 //flag=1,2,3分别为 server、rewrite、rule 类型
@@ -2051,7 +2059,7 @@ function get_emoji(emojip, sname) {
     "🇪🇺": ["EU", "欧盟", "欧罗巴","欧洲"],
     "🇫🇮": ["Finland", "芬兰","芬蘭","赫尔辛基"],
     "🇫🇷": ["FR", "France", "法国", "法國", "巴黎"],
-    "🇬🇧": ["UK", "GB", "England", "United Kingdom", "英国", "伦敦", "英"],
+    "🇬🇧": ["UK", "GB ", "England", "United Kingdom", "英国", "伦敦", "英"],
     "🇲🇴": ["MO", "Macao","Macau", "MAC", "澳门", "澳門", "CTM"],
     "🇰🇿": ["哈萨克斯坦"],
     "🇭🇺": ["匈牙利", "Hungary"],
@@ -2406,8 +2414,8 @@ function LoonSSR2QX(cnt) {
 // }
 
 function YAMLFix(cnt){
-  cnt = cnt.replace(/\[/g,"yaml@bug1")
-  if (cnt.indexOf("{") != -1 && /\{\s*\"*name/.test(cnt)){
+  cnt = cnt.replace(/\[/g,"yaml@bug1").replace(/\\r/g,"")
+  if (cnt.indexOf("{") != -1 && /\{\s*\"*(name|type|server)/.test(cnt)){
     cnt = cnt.replace(/(^|\n)- /g, "$1  - ").replace(/    - /g,"  - ").replace(/:(?!\s)/g,": ").replace(/\,\"/g,", \"").replace(/: {/g, ": {,   ").replace(/, (Host|host|path|mux)/g,",   $1")
     //2022-04-11 remove tls|skip from replace(/, (Host|host|path|mux)/g,",   $1")
     console.log("1st:\n"+cnt)
@@ -2424,6 +2432,8 @@ function YAMLFix(cnt){
   //2022-05-11 增加⬇️
   cnt = cnt.replace(/\n\s{4}headers/g,"\n      headers").replace(/\n\s{6}(H|h)ost/g,"\n        Host").replace(/\t/g,"")
   console.log("after-fix\n"+cnt)
+  //$notify("After-Fix","this is", cnt)
+
   return cnt
 }
 
@@ -2443,12 +2453,13 @@ function yamlcheck(cnt){
 // Clash parser
 function Clash2QX(cnt) {
   const yaml = new YAML()
+  if (Pdbg==1) { $notify(" Before YAML Parse", "content", cnt)}
   var aa = JSON.stringify(yaml.parse(YAMLFix(cnt))).replace(/yaml@bug𝟙/g,"[").replace(/冒号/gmi,":")
   for (var i=0;i<10;i++) {
     aa = aa.replace(new RegExp(patn[4][i], "gmi"),patn[0][i])
   }
   var bb = JSON.parse(aa).proxies
-  //$notify("YAML Parse", "content", JSON.stringify(bb))
+  if (Pdbg==1) { $notify("After YAML Parse", "content", JSON.stringify(bb))}
   //console.log(bb)
   var nl = bb.length
   var nodelist=[]
@@ -2525,6 +2536,7 @@ function CSSR2QX(cnt) {
   return node
 }
 
+
 //Clash vmess type server
 function CV2QX(cnt) {
   tag = "tag="+cnt.name.replace(/\\U.+?\s{1}/gi," ")
@@ -2544,8 +2556,10 @@ function CV2QX(cnt) {
     obfs = "obfs=over-tls"
   }
   console.log(obfs)
+  const phost = getValue(()=>cnt["ws-opts"]["headers"]["Host"]) 
   ohost = cnt["ws-headers"]? "obfs-host=" + cnt["ws-headers"]["Host"] : ""
-  ohost= cnt["ws-opts"]? "obfs-host=" + cnt["ws-opts"]["Host"] : ohost
+  ohost = phost ? "obfs-host="+phost : ohost
+  //ohost= cnt["ws-opts"]? "obfs-host=" + cnt["ws-opts"]["headers"]["Host"] : ohost
   ohost = cnt["servername"]? "obfs-host=" + cnt["servername"] : ohost
   console.log(ohost)
   ouri = cnt["ws-path"]? "obfs-uri="+cnt["ws-path"] : ""
