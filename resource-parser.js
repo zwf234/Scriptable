@@ -1,5 +1,5 @@
 /** 
-☑ 资源解析器 ©𝐒𝐡𝐚𝐰𝐧  ⟦2022-08-27 19:00⟧
+☑ 资源解析器 ©𝐒𝐡𝐚𝐰𝐧  ⟦2022-09-08 00:00⟧
 ----------------------------------------------------------
 ⛳ 关注 🆃🅶 频道: https://t.me/qixinscience
 
@@ -74,7 +74,7 @@
   ❖ 将淘宝比价中脚本替换成 lite 版本(如有此版本的脚本)
     ∎ replace=(price)(.*)@$1_lite$2
 ⦿ dst=rewrite/filter，分别为将 𝐦𝐨𝐝𝐮𝐥𝐞&𝗿𝘂𝗹𝗲-𝘀𝗲𝘁 转换成 重写/分流;
-  ❖ ⚠️ 默认将 𝐦𝐨𝐝𝐮𝐥𝐞 转换到重写, 𝗿𝘂𝗹𝗲-𝘀𝗲𝘁 转成分流
+  ❖ ⚠️ 默认将 𝐦𝐨𝐝𝐮𝐥𝐞 转换到重写, 𝗿𝘂𝗹𝗲-�𝗲𝘁 转成分流
   ❖ ⚠️ 把 𝗿𝘂𝗹𝗲-𝘀𝗲𝘁 中 url-regex 转成重写时, 必须要加 dst=rewrite;
   ❖ ⚠️ 把 𝐦𝐨𝐝𝐮𝐥𝐞 中的分流规则转换时, 必须要加 dst=filter
 ⦿ cdn=1, 将 github 脚本的地址转换成免翻墙 fastly.jsdelivr.net/gh
@@ -86,7 +86,7 @@
 ⦿ 通知参数 ntf=0/1, 用于 关闭/打开 资源解析器的提示通知
   ❖ 𝗿𝗲𝘄𝗿𝗶𝘁𝗲/𝗳𝗶𝗹𝘁𝗲𝗿 默认“开启”通知提示, 以防规则误删除
   ❖ 𝘀𝗲𝗿𝘃𝗲𝗿 资源解析则默认”关闭“通知提示
-⦿ 类型参数 type=domain-set/rule/module/list/nodes
+⦿ 类型参数� type=domain-set/rule/module/list/nodes
   ❖ 当解析器未能正确识别类型时, 可尝试使用此参数强制指定
 ⦿ 隐藏参数 hide=0, 禁用筛除的分流/重写，默认方式为删除
 ⦿ profile=111 , URL-Scheme 添加 QuanX 类型配置中远程资源
@@ -547,7 +547,7 @@ function Type_Check(subs) {
     var SubK = ["dm1lc3M", "c3NyOi8v", "CnNzOi8", "dHJvamFu", "c3M6Ly", "c3NkOi8v", "c2hhZG93", "aHR0cDovLw", "aHR0cHM6L", "CnRyb2phbjo", "aHR0cD0", "aHR0cCA"];
     var RewriteK = [" url 302", " url 307", " url reject", " url script", " url req", " url res", " url echo"] // quantumult X 类型 rewrite
     var SubK2 = ["ss://", "vmess://", "ssr://", "trojan://", "ssd://", "https://", "http://","socks://","ssocks://"];
-    var ModuleK = ["[Script]", "[Rule]", "[URL Rewrite]", "[Map Local]", "[MITM]", "\nhttp-r"]
+    var ModuleK = ["[Script]", "[Rule]", "[URL Rewrite]", "[Map Local]", "[MITM]", "\nhttp-r", "script-path"]
     var QXProfile = ["[filter_local]","[filter_remote]","[server_local]","[server_remote]"]
     var html = "DOCTYPE html"
     var subi = subs.replace(/ /g, "")
@@ -567,7 +567,7 @@ function Type_Check(subs) {
       type = (typeQ == "unsupported" || typeQ =="server")? "Clash":"wrong-field";
       typec = "server"
       content0 = Clash2QX(subs)
-    } else if ((/^hostname\s*\=|pattern\=/.test(subi) || RewriteK.some(RewriteCheck))  && para1.indexOf("dst=filter")==-1 && subi.indexOf("securehostname") == -1 && !/module|nodes|rule/.test(typeU) && !(RuleK.some(RuleCheck) && typeQ == "filter")) {
+    } else if ((/^hostname\s*\=/.test(subi) || RewriteK.some(RewriteCheck))  && para1.indexOf("dst=filter")==-1 && subi.indexOf("securehostname") == -1 && !/module|nodes|rule/.test(typeU) && !(RuleK.some(RuleCheck) && typeQ == "filter")) {
       // 2022-07-20 remove constrain && !/\[(Proxy|filter_local)\]/.test(subs)
       typec = "rewrite"
       type = (typeQ == "unsupported" || typeQ =="rewrite")? "rewrite":"wrong-field" //Quantumult X 类型 rewrite/ Surge Script/
@@ -981,11 +981,15 @@ function SCP2QX(subs) {
             rw = ptn + " url " + type + js
             nrw.push(rw)
           }
-        } else if (/\s30(7|2)$/.test(subs[i])) { //rewrite 302&307 复写
+        } else if (/\s30(7|2)$/.test(subs[i])) { //rewrite 302&307 复写(Surge)
           //tpe = subs[i].indexOf(" 302") != -1? "302":"307"
           //$notify("307/2",subs[i])
           rw = subs[i].split(" ")[0] + " url " + subs[i].split(" ")[2] + " " + subs[i].split(" ")[1].trim()
           //if(rw.indexOf("307")!=-1) {$notify("XX",subs[i],rw.split(" "))}
+          nrw.push(rw)
+        } else if (/\s\-\s30(2|7)\s/.test(subs[i])) { //rewrite 302&307 复写(Shadowrocket)
+          //xx - 302 $1$2$3
+          rw = subs[i].replace(" - "," url ")
           nrw.push(rw)
         } else if(subs[i].split(" ")[2] == "header") { // rewrite header 类型
           var pget = subs[i].split(" ")[0].split(".com")[1]
@@ -999,8 +1003,11 @@ function SCP2QX(subs) {
           var pgetn = subs[i].split("header-replace")[1].trim()
           rw = subs[i].split(" ")[0] + " url request-header " +"(.+\\r\\n)"+pget+":.+(\\r\\n) request-header " + "$1" + pgetn + "$2"
           nrw.push(rw)
-        } else if(subs[i].indexOf(" - reject") != -1) { // rewrite reject 类型
+        } else if(subs[i].indexOf(" _ reject") != -1) { // rewrite reject 类型(surge)
           rw = subs[i].split(" ")[0] + " url reject-200"
+          nrw.push(rw)
+        } else if(subs[i].indexOf(" - reject") != -1 ) { //shadowrocket reject
+          rw = subs[i].replace(" - ", " url ")
           nrw.push(rw)
         } else if (subs[i].indexOf("script-path") != -1) { //surge js 旧写法
           type = subs[i].replace(/\s+/g," ").split(" ")[0]
@@ -2305,6 +2312,7 @@ function get_emoji(emojip, sname) {
     "🇽🇰": ["科索沃", "Kosovo"],
     "🇲🇦": ["摩洛哥", "Morocco"],
     "🇪🇨": ["厄瓜多尔","EC", "Ecuador"],
+    "🇲🇺": ["毛里求斯", "Mauritius"],
     "🇵🇷": ["波多黎各", "PR", "Puerto Rico"],
     "🇭🇰": ["HK", "Hongkong", "Hong Kong", "HongKong", "HONG KONG","香港", "深港", "沪港", "呼港", "HKT", "HKBN", "HGC", "WTT", "CMI", "穗港", "京港", "港"],
     "🇨🇳": ["CN", "China", "回国", "中国","中國", "江苏", "北京", "上海", "广州", "深圳", "杭州", "徐州", "青岛", "宁波", "镇江", "back"],
@@ -2592,8 +2600,8 @@ function YAMLFix(cnt){
   //2022-05-11 增加⬇️
   //cnt = cnt.replace(/\n\s{4}headers/g,"\n      headers").replace(/\n\s{6}(H|h)ost/g,"\n        Host").replace(/\t/g,"")
   //2022-06-07 修改为👇，解决部分无 proxies 字段的
-  cnt = cnt.indexOf("proxies:") != -1?cnt.replace(/\n\s{4}headers/g,"\n      headers").replace(/\n\s{6}(H|h)ost/g,"\n        Host").replace(/\t/g,""):cnt
-  
+  cnt = cnt.indexOf("proxies:") != -1?cnt.replace(/\n\s{4}headers/g,"\n      headers").replace(/\n\s{6}Host/g,"\n        Host").replace(/\t/g,""):cnt
+  //2022-09-01 remove host in s{6}(H|h)ost
   //console.log("part-fix:\n"+cnt.split("proxies:")[1])
   cnt = cnt.indexOf("proxies:") == -1? "proxies:\n" + cnt :"proxies:"+cnt.split("proxies:")[1]
   console.log("after-fix\n"+cnt)
