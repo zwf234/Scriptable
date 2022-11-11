@@ -1,5 +1,5 @@
 /** 
-☑ 资源解析器 ©𝐒𝐡𝐚𝐰𝐧  ⟦2022-11-05 00:00⟧
+☑ 资源解析器 ©𝐒𝐡𝐚𝐰𝐧  ⟦2022-11-11 00:00⟧
 ----------------------------------------------------------
 ⛳ 关注 🆃🅶 频道: https://t.me/qixinscience
 
@@ -550,7 +550,7 @@ function Type_Check(subs) {
     var QuanXK = ["shadowsocks=", "trojan=", "vmess=", "http=", "socks5="];
     var SurgeK = ["=ss,", "=vmess,", "=trojan,", "=http,", "=custom,", "=https,", "=shadowsocks", "=shadowsocksr", "=sock5", "=sock5-tls"];
     var ClashK = ["proxies:"]
-    var SubK = ["dm1lc3M", "c3NyOi8v", "CnNzOi8", "dHJvamFu", "c3M6Ly", "c3NkOi8v", "c2hhZG93", "aHR0cDovLw", "aHR0cHM6L", "CnRyb2phbjo", "aHR0cD0", "aHR0cCA"];
+    var SubK = ["dm1lc3M", "c3NyOi8v", "CnNzOi8", "dHJvamFu", "c3M6Ly", "c3NkOi8v", "c2hhZG93", "aHR0cDovLw", "aHR0cHM6L", "CnRyb2phbjo", "aHR0cD0", "aHR0cCA","U1RBVFVT"];
     var RewriteK = [" url 302", " url 307", " url reject", " url script", " url req", " url res", " url echo"] // quantumult X 类型 rewrite
     var SubK2 = ["ss://", "vmess://", "ssr://", "trojan://", "ssd://", "https://", "http://","socks://","ssocks://"];
     var ModuleK = ["[Script]", "[Rule]", "[URL Rewrite]", "[Map Local]", "[MITM]", "\nhttp-r", "script-path"]
@@ -586,12 +586,13 @@ function Type_Check(subs) {
       typec = "filter"
       type = (typeQ == "unsupported" || typeQ =="filter")? "Rule":"wrong-field";
     } else if (typeU == "domain-set") {// 仅限用户指定为 domain-set；((DomainK.some(RuleCheck) || typeU == "domain-set") && subs.indexOf("[Proxy]") == -1 && typeU != "nodes") {
-      typec = "filter"
+      typec = "filter-domain-set"
       type = (typeQ == "unsupported" || typeQ =="filter")? "Rule":"wrong-field";
       content0 = Domain2Rule(content0) // 转换 domain-set
     } else if (typeQ == "filter") { // 纯 list类型？
-      typec = "filter"
+      typec = "filter-list"
       type = (typeQ == "unsupported" || typeQ =="filter")? "Rule":"wrong-field";
+      content0 = content0.split("\n").map(Domain2Rule).join("\n")
     } else if (subsn.length >= 1 && SubK2.some(NodeCheck2) && !/\[(Proxy|filter_local)\]/.test(subs)) { //未b64加密的多行URI 组合订阅
       typec = "server"
       type= (typeQ == "unsupported" || typeQ =="server" || typeQ =="uri") ? "Subs":"wrong-field"
@@ -972,7 +973,7 @@ function URX2QX(subs) {
             rw = subs[i].replace(/ /g, "").split(",REJECT")[0].split("GEX,")[1] + " url " + "reject-200"
             nrw.push(rw)
         } else if (subs[i].indexOf("data=") != -1 && subs.indexOf("[Map Local]") != -1){ // Map Local 类型
-            rw = subs[i].replace(/ /g, "").split("data=")[0] + " url " + "reject-dict"
+            rw = subs[i].replace(/ /g, "").split("data=")[0].replace(/\"/g,"") + " url echo-response text/html echo-response " + subs[i].replace(/ /g, "").split("data=")[1].replace(/\"/g,"")//"reject-dict"
             nrw.push(rw)
         } 
     }
@@ -1316,8 +1317,11 @@ function Rule_Policy(content) { //增加、替换 policy
         } else { nn = nn.replace("IP-CIDR6", "ip6-cidr") }
         return nn
     } else if (cnt.length == 1 && !RuleK.some(RuleCheck) && cnt[0]!="" && cnt[0].indexOf("payload:")==-1 && cnt[0].indexOf("=")==-1 && cnt[0].trim()!="https:") { // 纯域名/ip 列表
+      //$notify("LIST-HANDLE")
       return rule_list_handle(cnt[0])
-    } else { return "" }//if RuleK1 check 
+    } else { 
+      //$notify("Nothing")
+      return "" }//if RuleK1 check 
 }
 
 // 处理纯列表
@@ -2257,6 +2261,7 @@ function emoji_del(str) {
 function get_emoji(emojip, sname) {
    var Lmoji = { 
     "🏳️‍🌈": ["流量", "套餐", "剩余", "重置", "到期" , "时间", "应急", "过期", "Bandwidth", "expire", "Traffic", "traffic"],
+    "🇴🇲": ["阿曼", " OM "],
     "🇦🇩": ["安道尔", "Andorra"],
     "🇦🇿": ["阿塞拜疆","Azerbaijan"],
     "🇦🇹": ["奥地利", "奧地利", "Austria", "维也纳"],
@@ -2279,7 +2284,7 @@ function get_emoji(emojip, sname) {
     "🇦🇲": ["亚美尼亚", "亞美尼亞", "Armenia"],
     "🇷🇸": ["RS ","RS_", "塞尔维亚", "塞爾維亞", "Seville", "Sevilla"],
     "🇲🇩": ["摩爾多瓦","MD","摩尔多瓦", "Moldova"],
-    "🇩🇪": [" DE ", "DE-", "DE_", "German", "GERMAN", "德国", "德國", "法兰克福","京德","滬德","廣德","沪德","广德"],
+    "🇩🇪": ["DE ", "DE-", "DE_", "German", "GERMAN", "德国", "德國", "法兰克福","京德","滬德","廣德","沪德","广德"],
     "🇩🇰": ["DK","DNK","丹麦","丹麥", "Denmark"],
     "🇪🇸": ["ES", "西班牙", "Spain"],
     "🇪🇺": ["EU", "欧盟", "欧罗巴","欧洲", "European"],
@@ -2300,7 +2305,7 @@ function get_emoji(emojip, sname) {
     "🇺🇸": ["US", "USA", "America", "United States", "美国", "美", "京美", "波特兰", "达拉斯", "俄勒冈", "凤凰城", "费利蒙", "硅谷", "矽谷", "拉斯维加斯", "洛杉矶", "圣何塞", "圣荷西", "圣克拉拉", "西雅图", "芝加哥", "沪美", "哥伦布", "纽约"],
     "🇹🇼": ["TW", "Taiwan","TAIWAN", "台湾", "台北", "台中", "新北", "彰化", "CHT", "台", "HINET"],
     "🇮🇩": ["ID ", "IDN ", "Indonesia", "印尼", "印度尼西亚", "雅加达"],
-    "🇮🇪": ["Ireland", "IRELAND", "爱尔兰", "愛爾蘭", "都柏林"],
+    "🇮🇪": ["Ireland", "IRELAND", "IE ", "爱尔兰", "愛爾蘭", "都柏林"],
     "🇮🇱": ["Israel", "以色列"],
     "🇮🇳": ["India", "IND", "INDIA","印度", "孟买", "Mumbai","IN "],
     "🇮🇸": ["IS","ISL", "冰岛","冰島", "Iceland"],
@@ -2324,7 +2329,7 @@ function get_emoji(emojip, sname) {
     "🇿🇦": ["South Africa", "南非", "Johannesburg"],
     "🇦🇪": ["United Arab Emirates", "阿联酋","AE ", "迪拜", "Dubai"],
     "🇧🇷": ["BR", "Brazil", "巴西", "圣保罗"],
-    "🇯🇵": ["JP", "Japan","JAPAN", "日本", "东京", "大阪", "埼玉", "京日", "苏日", "沪日", "穗日", "川日", "中日", "泉日", "杭日", "深日", "辽日", "广日", "Tokyo"],
+    "🇯🇵": ["JP", "Japan","JAPAN", "日本", "东京", "大阪", "埼玉", "京日", "苏日", "沪日","上日", "穗日", "川日", "中日", "泉日", "杭日", "深日", "辽日", "广日", "Tokyo"],
     "🇦🇷": ["AR", "Argentina", "阿根廷"],
     "🇳🇴": ["Norway", "挪威", "NO"],
     "🇵🇱": [" PL", "POL", "波兰","波蘭", "Poland"],
